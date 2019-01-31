@@ -1,0 +1,71 @@
+# 1.下载Mojave
+首先，从App Store下载Mojave，然后在启动后取消安装（Command-Q）。这将在您的/ Applications文件夹中保留“Install macOS Mojave”安装程序。
+
+# 2.创建“mk-mojave-iso.sh”的shell脚本
+脚本内容如下：
+#!/usr/bin/env bash
+hdiutil attach /Applications/Install\ macOS\ Mojave\.app/Contents/SharedSupport/InstallESD.dmg -noverify -mountpoint /Volumes/mojave
+hdiutil create -o ./MojaveBase.cdr -size 7316m -layout SPUD -fs HFS+J
+hdiutil attach ./MojaveBase.cdr.dmg -noverify -mountpoint /Volumes/install_build
+asr restore -source /Applications/Install\ macOS\ Mojave\.app/Contents/SharedSupport/BaseSystem.dmg -target /Volumes/install_build -noprompt -noverify -erase
+rm -rf /Volumes/OS\ X\ Base\ System/System/Installation/Packages
+mkdir -p /Volumes/OS\ X\ Base\ System/System/Installation/Packages
+cp -R /Volumes/mojave/Packages/* /Volumes/OS\ X\ Base\ System/System/Installation/Packages/
+hdiutil detach /Volumes/OS\ X\ Base\ System/
+hdiutil detach /Volumes/mojave/
+mv ./MojaveBase.cdr.dmg ./BaseSystem.dmg
+# Restore the 10.13 Installer's BaseSystem.dmg into file system and place custom BaseSystem.dmg into the root
+hdiutil create -o ./Mojave.cdr -size 8965m -layout SPUD -fs HFS+J
+hdiutil attach ./Mojave.cdr.dmg -noverify -mountpoint /Volumes/install_build
+asr restore -source /Applications/Install\ macOS\ Mojave\.app/Contents/SharedSupport/BaseSystem.dmg -target /Volumes/install_build -noprompt -noverify -erase
+cp ./BaseSystem.dmg /Volumes/OS\ X\ Base\ System
+hdiutil detach /Volumes/OS\ X\ Base\ System/
+hdiutil convert ./Mojave.cdr.dmg -format UDTO -o ./Mojave.iso
+mv ./Mojave.iso.cdr ~/Desktop/Mojave.iso
+rm ./Mojave.cdr.dmg
+
+运行代码，输出将包含下面突出显示的一些错误，但您可以忽略它们：
+
+➜ mojave ./mk-mojave-iso.sh
+/dev/disk5 GUID_partition_scheme
+/dev/disk5s1 EFI
+/dev/disk5s2 Apple_HFS /Volumes/mojave
+created: /Volumes/Data/mojave/MojaveBase.cdr.dmg
+/dev/disk6 Apple_partition_scheme
+/dev/disk6s1 Apple_partition_map
+/dev/disk6s2 Apple_HFS /Volumes/install_build
+Validating target...done
+Validating source...done
+Retrieving scan information...done
+Validating sizes...done
+Restoring ....10....20....30....40....50....60....70....80....90....100
+Restored target device is /dev/disk6s2.
+Remounting target volume...done
+Personalization succeeded
+asr: Couldn't personalize volume /Volumes/OS X Base System
+"disk6" ejected.
+"disk5" ejected.
+created: /Volumes/Data/mojave/Mojave.cdr.dmg
+/dev/disk5 Apple_partition_scheme
+/dev/disk5s1 Apple_partition_map
+/dev/disk5s2 Apple_HFS /Volumes/install_build
+Validating target...done
+Validating source...done
+Retrieving scan information...done
+Validating sizes...done
+Restoring ....10....20....30....40....50....60....70....80....90....100
+Restored target device is /dev/disk5s2.
+Remounting target volume...done
+Personalization succeeded
+asr: Couldn't personalize volume /Volumes/OS X Base System
+"disk5" ejected.
+Reading Driver Descriptor Map (DDM : 0)…
+Reading Apple (Apple_partition_map : 1)…
+Reading disk image (Apple_HFS : 2)…
+......................................................................................................................................................................
+Elapsed Time: 1m 6.068s
+Speed: 135.7Mbytes/sec
+Savings: 0.0%
+created: /Volumes/Data/mojave/Mojave.iso.cdr
+
+ISO将在您的工作目录中。
